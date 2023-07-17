@@ -2,6 +2,10 @@
 
 An experiment in game emulation through machine learning. The goal was to emulate a relatively simple game using a machine learning model.
 
+<p align="center">
+    <img src="./teaser.gif" width="40%">
+</p>
+
 At each time step, the state of the game grid is fed into a "Tetris engine" which predicts the new state of the grid. The game grid is then updated to this new state.
 
 The engine can be configured to be either a hard-coded one which explicitly follows the usual Tetris rules, or a machine learning-based one which draws its predictions from an ML model. By default, the ML-based predictor is used.
