@@ -1,0 +1,10 @@
+pygame==2.4.0
+numpy
+ipykernel
+torch
+matplotlib
+pandas
+tensorboard
+torchvision
+scipy
+pillow
