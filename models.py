@@ -71,9 +71,10 @@ class TetrisModel(nn.Module):
             m = self.head[i]
             nn.init.kaiming_uniform_(m.weight, nonlinearity="relu")
 
-    def forward(self, x, z):
+    def forward(self, x):
         batch_size, channels, height, width = x.shape
 
+        z = torch.rand(batch_size, 4)
         z = z[:, :, None, None]  # Expand dims to match x
         z = z.repeat(1, 1, height, width)  # Upscale to image size
         x = torch.cat((x, z), dim=1)

@@ -178,8 +178,7 @@ class ModelBasedTetrisEngine(TetrisEngine):
                 X = X.type(torch.float)
                 X = X.permute((2, 0, 1))
                 X = X.unsqueeze(0)
-                z = torch.rand(1, 4)
-                probs = self.model(X, z).squeeze(0)
+                probs = self.model(X).squeeze(0)
                 probs = probs.numpy()
             if self.mode == "prob":
                 thresholds = self.rng.random(size=probs.shape[1:], dtype=probs.dtype)
