@@ -13,6 +13,7 @@ import sys
 import argparse
 
 import pygame
+import numpy as np
 
 from engines import (
     EventTypes,
@@ -28,8 +29,10 @@ COLS = 10
 ROWS = 22
 MAX_FPS = 30
 
-COLORS = [
+CELL_COLORS = [
+    # Background 1
     (0, 0, 0),
+    # Block colors
     (255, 85, 85),
     (100, 200, 115),
     (120, 108, 245),
@@ -37,7 +40,8 @@ COLORS = [
     (50, 120, 52),
     (146, 202, 73),
     (150, 161, 218),
-    (35, 35, 35),  # Helper color for background grid
+    # Background 2
+    (35, 35, 35),
 ]
 
 
@@ -51,9 +55,9 @@ class TetrisApp(object):
         self.width = CELL_SIZE * (COLS + 6)
         self.height = CELL_SIZE * ROWS
         self.rlim = CELL_SIZE * COLS
-        self.bground_grid = [
-            [8 if x % 2 == y % 2 else 0 for x in range(COLS)] for y in range(ROWS)
-        ]
+        self.bground_grid = np.zeros((ROWS, COLS), dtype=np.int32)
+        self.bground_grid[::2, ::2] = 8
+        self.bground_grid[1::2, 1::2] = 8
 
         self.default_font = pygame.font.Font(pygame.font.get_default_font(), 12)
 
@@ -112,7 +116,7 @@ class TetrisApp(object):
                 if val:
                     pygame.draw.rect(
                         self.screen,
-                        COLORS[val],
+                        CELL_COLORS[val],
                         pygame.Rect(
                             (off_x + x) * CELL_SIZE,
                             (off_y + y) * CELL_SIZE,
