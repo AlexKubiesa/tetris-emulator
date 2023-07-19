@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from recording import RecordingFolder
+from recording import RecordingDatabase
 from models import TetrisModel
 
 
@@ -142,15 +142,14 @@ class RecordingTetrisEngine(TetrisEngine):
 
     def __init__(self, engine: TetrisEngine, folder: str):
         self.engine = engine
-        self.folder = RecordingFolder(folder)
+        self.db = RecordingDatabase(folder)
         self.board_buffer = []
 
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         board, gameover = self.engine.step(event_type)
         self.board_buffer.append(board)
         if len(self.board_buffer) >= self.buffer_length:
-            path = self.folder.next_file()
-            np.save(path, np.array(self.board_buffer))
+            self.db.insert(np.array(self.board_buffer))
             self.board_buffer.clear()
         return board, gameover
 
