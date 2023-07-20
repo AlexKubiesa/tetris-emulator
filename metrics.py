@@ -88,6 +88,66 @@ def get_block_spawn_type(classes_x, classes_y):
     return None
 
 
+class BoardAccuracy:
+    """Measures the proportion of boards where all cells were predicted correctly."""
+
+    def __init__(self):
+        self.reset_state()
+
+    def reset_state(self):
+        self.num_correct = 0
+        self.dataset_size = 0
+
+    def update_state(self, classes_y_pred, classes_y):
+        self.num_correct += (
+            (classes_y_pred == classes_y).all(-1).all(-1).type(torch.int).sum().item()
+        )
+        self.dataset_size += classes_y_pred.size(0)
+
+    def result(self):
+        return self.num_correct / self.dataset_size
+
+
+class BoardPlausibility:
+    """Measures the proportion of predictions that would be plausible according to a perfect discriminator."""
+
+    def __init__(self):
+        self.reset_state()
+
+    def reset_state(self):
+        self.num_plausible = 0
+        self.dataset_size = 0
+
+    def update_state(self, classes_x, classes_y_pred, classes_y):
+        for i in range(classes_x.size(0)):
+            y_spawn_type = get_block_spawn_type(classes_x[i], classes_y[i])
+            if y_spawn_type is None:
+                # If it's a block fall, expect the boards to match exactly.
+                self.num_plausible += int(
+                    (classes_y_pred[i] == classes_y[i]).all(-1).all(-1).item()
+                )
+            else:
+                # If it's a block spawn, allow any spawn type, but check the rows below the top 3 to make sure
+                # they match exactly.
+                y_pred_spawn_type = get_block_spawn_type(
+                    classes_x[i], classes_y_pred[i]
+                )
+                self.num_plausible += int(
+                    (y_pred_spawn_type is not None)
+                    and (
+                        (classes_y_pred[i, 3:, :] == classes_y[i, 3:, :])
+                        .all(-1)
+                        .all(-1)
+                        .item()
+                    )
+                )
+
+        self.dataset_size += classes_x.size(0)
+
+    def result(self):
+        return self.num_plausible / self.dataset_size
+
+
 class SpawnDiversity:
     """Roughly measures what proportion of block spawn types are represented with equal probability by the emulator.
 
