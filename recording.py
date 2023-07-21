@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import logging
 
 import numpy as np
 
@@ -20,6 +21,10 @@ class RecordingDatabase:
                 )
                 + 1
             )
+
+    @property
+    def path(self):
+        return self._path
 
     def __len__(self):
         return self._count
@@ -44,14 +49,14 @@ class RecordingDatabase:
         # Delete files
         for idx in idxs:
             file = os.path.join(self._path, str(idx) + self._ext)
+            logging.debug("Deleting '%s'", file)
             os.remove(file)
 
         # Reindex remaining files
-        reindex_count = self._count - len(idxs)
         old_idx = self._count
-        new_idx = min(idxs)
+        new_idx = min(idxs) - 1
 
-        while reindex_count > 0:
+        while True:
             old_exists = False
             while not old_exists:
                 old_idx -= 1
@@ -64,8 +69,11 @@ class RecordingDatabase:
                 new_file = os.path.join(self._path, str(new_idx) + self._ext)
                 new_exists = os.path.exists(new_file)
 
+            if old_idx <= new_idx:
+                break
+
+            logging.debug("Renaming '%s' to '%s'", old_file, new_file)
             os.rename(old_file, new_file)
-            reindex_count -= 1
 
         # Adjust count
         self._count -= len(idxs)
