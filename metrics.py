@@ -148,6 +148,30 @@ class BoardPlausibility:
         return self.num_plausible / self.dataset_size
 
 
+class CellAccuracy:
+    """Measures the proportion of cells predicted correctly."""
+
+    def __init__(self):
+        self.reset_state()
+
+    def reset_state(self):
+        self.num_correct = 0
+        self.dataset_size = 0
+
+    def update_state(self, classes_y_pred, classes_y):
+        self.num_correct += (
+            (classes_y_pred == classes_y)
+            .type(torch.float)
+            .mean(dim=(1, 2))
+            .sum()
+            .item()
+        )
+        self.dataset_size += classes_y_pred.size(0)
+
+    def result(self):
+        return self.num_correct / self.dataset_size
+
+
 class SpawnDiversity:
     """Roughly measures what proportion of block spawn types are represented with equal probability by the emulator.
 
@@ -183,6 +207,80 @@ class SpawnDiversity:
         # A uniform random variable with n states has an entropy of log(n). We want to get n.
         equiv_num_types = exp(H)
         return equiv_num_types / NUM_SPAWN_TYPES
+
+
+class SpawnPrecision:
+    def __init__(self):
+        self.reset_state()
+
+    def reset_state(self):
+        self.num_true_positives = np.float32(0.0)
+        self.num_spawns_pred = np.float32(0.0)
+
+    def update_state(self, classes_x, classes_y_pred, classes_y):
+        spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] == 1).any(-1)
+        spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
+            classes_y_pred[:, 0, :] == 1
+        ).any(-1)
+
+        self.num_true_positives += (
+            (spawns & spawns_pred).type(torch.float).sum().numpy()
+        )
+        self.num_spawns_pred += spawns_pred.type(torch.float).sum().numpy()
+
+    def result(self):
+        return self.num_true_positives / self.num_spawns_pred
+
+
+class SpawnRecall:
+    def __init__(self):
+        self.reset_state()
+
+    def reset_state(self):
+        self.num_true_positives = 0
+        self.num_spawns = 0
+
+    def update_state(self, classes_x, classes_y_pred, classes_y):
+        spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] == 1).any(-1)
+        spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
+            classes_y_pred[:, 0, :] == 1
+        ).any(-1)
+
+        self.num_true_positives += (spawns & spawns_pred).type(torch.int).sum().item()
+        self.num_spawns += spawns.type(torch.int).sum().item()
+
+    def result(self):
+        return self.num_true_positives / self.num_spawns
+
+
+class SpawnValidity:
+    def __init__(self):
+        self.reset_state()
+
+    def reset_state(self):
+        self.num_valid_spawns_pred = np.float32(0.0)
+        self.num_spawns_pred = np.float32(0.0)
+
+    def update_state(self, classes_x, classes_y_pred):
+        spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
+            classes_y_pred[:, 0, :] == 1
+        ).any(-1)
+
+        num_valid_spawns_pred = np.float32(0.0)
+        for i in range(classes_x.size(0)):
+            if not spawns_pred[i]:
+                # Avoid computing spawn validity if there is no spawn
+                continue
+            valid_spawn = (
+                get_block_spawn_type(classes_x[i], classes_y_pred[i]) is not None
+            )
+            self.num_valid_spawns_pred += np.float32(valid_spawn)
+
+        self.num_valid_spawns_pred += num_valid_spawns_pred
+        self.num_spawns_pred += spawns_pred.type(torch.float).sum().numpy()
+
+    def result(self):
+        return self.num_valid_spawns_pred / self.num_spawns_pred
 
 
 if __name__ == "__main__":
