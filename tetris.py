@@ -46,9 +46,8 @@ CELL_COLORS = [
 
 
 class TetrisApp(object):
-    def __init__(self, record: bool, engine_type: str):
-        self.record = record
-        self.engine_type = engine_type
+    def __init__(self, engine: TetrisEngine):
+        self.engine = engine
 
         pygame.init()
         pygame.key.set_repeat(250, 25)
@@ -67,15 +66,6 @@ class TetrisApp(object):
         self.init_game()
 
     def init_game(self):
-        self.engine: TetrisEngine
-        if self.engine_type == "rule":
-            self.engine = RuleBasedTetrisEngine(COLS, ROWS)
-        elif self.engine_type == "model":
-            self.engine = ModelBasedTetrisEngine(COLS, ROWS, mode="normal")
-        else:
-            raise ValueError(f"Unrecognized engine type: {self.engine_type}.")
-        if self.record:
-            self.engine = RecordingTetrisEngine(self.engine, "recordings")
         self.board, self.gameover = self.engine.step(EventTypes.GAME_START)
         self.level = 1
         self.score = 0
@@ -239,5 +229,14 @@ if __name__ == "__main__":
             "Training and test data should be recorded with the rule-based engine."
         )
 
-    App = TetrisApp(args.record, args.engine)
+    engine: TetrisEngine
+    if args.engine == "rule":
+        engine = RuleBasedTetrisEngine(COLS, ROWS)
+    else:
+        engine = ModelBasedTetrisEngine(COLS, ROWS, mode="normal")
+
+    if args.record:
+        engine = RecordingTetrisEngine(engine, "recordings")
+
+    App = TetrisApp(engine)
     App.run()
