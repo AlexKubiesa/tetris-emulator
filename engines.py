@@ -20,10 +20,8 @@ class CellTypes:
 
 
 class EventTypes:
-    # The game has just started.
-    GAME_START = 0
     # It is time for a block to drop one space.
-    DROP = 1
+    DROP = 0
 
 
 class TetrisEngine(ABC):
@@ -32,12 +30,21 @@ class TetrisEngine(ABC):
     """
 
     @abstractmethod
+    def reset(self) -> tuple[npt.NDArray[np.int32], bool]:
+        """Starts or resets the game and returns the initial state of the board.
+
+        Returns:
+            `board`   : An array of shape `(width, height)` representing the state of the board at the next time step.
+            `gameover`: Whether the game has ended.
+        """
+        pass
+
+    @abstractmethod
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         """Advances one time step and returns the new state of the board.
 
         Arguments:
-            `board`: Array of shape `(width, height)`, where each entry is the integer value of a cell type. The
-                     cell type zero is reserved for "boundary" cells that are beyond the edge of the board.
+            `event_type`: An (integer) event taken from the class `EventTypes`.
 
         Returns:
             `board`   : An array of shape `(width, height)` representing the state of the board at the next time step.
@@ -93,12 +100,17 @@ class RuleBasedTetrisEngine(TetrisEngine):
         self.cols = cols
         self.rows = rows
         self.block = None
+        self.board = None
+        self.gameover = None
+
+    def reset(self) -> tuple[npt.NDArray[np.int32], bool]:
+        self.board = np.zeros((self.rows, self.cols), dtype=np.int32)
+        self.gameover = False
+        return self.board, self.gameover
 
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
-        if event_type == EventTypes.GAME_START:
-            self.board = np.zeros((self.rows, self.cols), dtype=np.int32)
-            self.gameover = False
-            return self.board, self.gameover
+        if self.board is None:
+            raise RuntimeError("`reset` must be called before `step`.")
         if event_type == EventTypes.DROP:
             if (self.board[0, :] != 0).any():
                 self.gameover = True
@@ -145,6 +157,12 @@ class RecordingTetrisEngine(TetrisEngine):
         self.db = RecordingDatabase(folder)
         self.board_buffer = []
 
+    def reset(self) -> tuple[npt.NDArray[np.int32], bool]:
+        self.board_buffer.clear()
+        board, gameover = self.engine.reset()
+        self.board_buffer.append(board)
+        return board, gameover
+
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         board, gameover = self.engine.step(event_type)
         self.board_buffer.append(board)
@@ -165,23 +183,28 @@ class ModelBasedTetrisEngine(TetrisEngine):
         self.model.load_state_dict(torch.load("tetris_emulator.pth"))
         self.model.eval()
         self.rng = np.random.default_rng()
+        self.board = None
+        self.gameover = None
+
+    def reset(self) -> tuple[npt.NDArray[np.int32], bool]:
+        self.board = np.zeros((self.rows, self.cols), dtype=np.int32)
+        self.gameover = False
+        return self.board, self.gameover
 
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
-        if event_type == EventTypes.GAME_START:
-            self.board = np.zeros((self.rows, self.cols), dtype=np.int32)
-            return self.board, False
-        if event_type == EventTypes.DROP:
-            with torch.no_grad():
-                X = torch.tensor(self.board, dtype=torch.long)
-                X = F.one_hot(X, 2)
-                X = X.type(torch.float)
-                X = X.permute((2, 0, 1))
-                X = X.unsqueeze(0)
-                probs = self.model(X).squeeze(0)
-                probs = probs.numpy()
-            if self.mode == "prob":
-                thresholds = self.rng.random(size=probs.shape[1:], dtype=probs.dtype)
-                np.greater(probs[1], thresholds, out=self.board)
-            else:
-                np.argmax(probs, axis=0, out=self.board)
-            return self.board, False
+        if self.board is None:
+            raise RuntimeError("`reset` must be called before `step`.")
+        with torch.no_grad():
+            X = torch.tensor(self.board, dtype=torch.long)
+            X = F.one_hot(X, 2)
+            X = X.type(torch.float)
+            X = X.permute((2, 0, 1))
+            X = X.unsqueeze(0)
+            probs = self.model(X).squeeze(0)
+            probs = probs.numpy()
+        if self.mode == "prob":
+            thresholds = self.rng.random(size=probs.shape[1:], dtype=probs.dtype)
+            np.greater(probs[1], thresholds, out=self.board)
+        else:
+            np.argmax(probs, axis=0, out=self.board)
+        return self.board, False

@@ -66,7 +66,7 @@ class TetrisApp(object):
         self.init_game()
 
     def init_game(self):
-        self.board, self.gameover = self.engine.step(EventTypes.GAME_START)
+        self.board, self.gameover = self.engine.reset()
         self.level = 1
         self.score = 0
         self.lines = 0
