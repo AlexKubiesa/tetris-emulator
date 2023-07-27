@@ -160,7 +160,7 @@ class TetrisApp(object):
             "LEFT": lambda: self.step_model(EventTypes.LEFT),
             "RIGHT": lambda: self.step_model(EventTypes.RIGHT),
             "DOWN": lambda: self.drop(True),
-            "UP": self.rotate_block,
+            "UP": lambda: self.step_model(EventTypes.ROTATE),
             "p": self.toggle_pause,
             "SPACE": self.start_game,
             "RETURN": self.insta_drop,

@@ -26,6 +26,8 @@ class EventTypes:
     LEFT = 1
     # User wants to move block right
     RIGHT = 2
+    # User wants to rotate block
+    ROTATE = 3
 
 
 class TetrisEngine(ABC):
@@ -124,7 +126,7 @@ class RuleBasedTetrisEngine(TetrisEngine):
                 self.new_block()
             else:
                 self.block.y += 1
-            if self.check_collision_bottom(self.board, self.block):
+            if self.check_collision(self.board, self.block, offset=(0, 1)):
                 self.add_block_to_board(self.board, self.block)
                 self.block = None
             board = self.board.copy()
@@ -135,7 +137,7 @@ class RuleBasedTetrisEngine(TetrisEngine):
         if event_type == EventTypes.LEFT:
             board = self.board.copy()
             if self.block is not None:
-                if not self.check_collision_left(board, self.block):
+                if not self.check_collision(board, self.block, offset=(-1, 0)):
                     self.block.x -= 1
                 self.add_block_to_board(board, self.block)
             return board, self.gameover
@@ -143,8 +145,39 @@ class RuleBasedTetrisEngine(TetrisEngine):
         if event_type == EventTypes.RIGHT:
             board = self.board.copy()
             if self.block is not None:
-                if not self.check_collision_right(board, self.block):
+                if not self.check_collision(board, self.block, offset=(1, 0)):
                     self.block.x += 1
+                self.add_block_to_board(board, self.block)
+            return board, self.gameover
+
+        if event_type == EventTypes.ROTATE:
+            if self.block is not None:
+                rotated_block = Block(
+                    np.rot90(self.block.shape, -1), self.block.x, self.block.y
+                )
+
+                if not self.check_collision(self.board, rotated_block):
+                    self.block = rotated_block
+                elif not self.check_collision(
+                    self.board, rotated_block, offset=(-1, 0)
+                ):
+                    rotated_block.x -= 1
+                    self.block = rotated_block
+                elif not self.check_collision(self.board, rotated_block, offset=(1, 0)):
+                    rotated_block.x += 1
+                    self.block = rotated_block
+                elif not self.check_collision(
+                    self.board, rotated_block, offset=(0, -1)
+                ):
+                    rotated_block.y -= 1
+                    self.block = rotated_block
+
+                if self.check_collision(self.board, self.block, offset=(0, 1)):
+                    self.add_block_to_board(self.board, self.block)
+                    self.block = None
+
+            board = self.board.copy()
+            if self.block is not None:
                 self.add_block_to_board(board, self.block)
             return board, self.gameover
 
@@ -156,24 +189,22 @@ class RuleBasedTetrisEngine(TetrisEngine):
             0,
         )
 
-    def check_collision_left(self, board, block):
-        if block.left <= 0:
+    def check_collision(self, board, block, offset=(0, 0)):
+        """Checks whether the block overflows the board boundary or overlaps filled cells on the board, when offset by the given amount."""
+        off_x, off_y = offset
+        if (
+            (block.left + off_x < 0)
+            or (block.right + off_x > board.shape[1])
+            or (block.top + off_y < 0)
+            or (block.bottom + off_y > board.shape[0])
+        ):
             return True
-        board_view = board[block.top : block.bottom, block.left - 1 : block.right - 1]
-        overlap = block.shape & board_view
-        return overlap.any()
 
-    def check_collision_right(self, board, block):
-        if block.right >= board.shape[1]:
-            return True
-        board_view = board[block.top : block.bottom, block.left + 1 : block.right + 1]
-        overlap = block.shape & board_view
-        return overlap.any()
+        board_view = board[
+            block.top + off_y : block.bottom + off_y,
+            block.left + off_x : block.right + off_x,
+        ]
 
-    def check_collision_bottom(self, board, block):
-        if block.bottom >= board.shape[0]:
-            return True
-        board_view = board[block.top + 1 : block.bottom + 1, block.left : block.right]
         overlap = block.shape & board_view
         return overlap.any()
 
