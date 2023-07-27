@@ -1,7 +1,7 @@
 # Original Tetris implementation: https://gist.github.com/silvasur/565419
 
 # Control keys:
-#       Down - Drop block faster (not implemented)
+#       Down - Drop block faster
 # Left/Right - Move block (not implemented)
 #         Up - Rotate block clockwise (not implemented)
 #     Escape - Quit game
