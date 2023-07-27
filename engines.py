@@ -20,8 +20,12 @@ class CellTypes:
 
 
 class EventTypes:
-    # It is time for a block to drop one space.
+    # Block should drop one space - timer ticked or user pressed Down
     DROP = 0
+    # User wants to move block left
+    LEFT = 1
+    # User wants to move block right
+    RIGHT = 2
 
 
 class TetrisEngine(ABC):
@@ -111,6 +115,7 @@ class RuleBasedTetrisEngine(TetrisEngine):
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         if self.board is None:
             raise RuntimeError("`reset` must be called before `step`.")
+
         if event_type == EventTypes.DROP:
             if (self.board[0, :] != 0).any():
                 self.gameover = True
@@ -119,11 +124,27 @@ class RuleBasedTetrisEngine(TetrisEngine):
                 self.new_block()
             else:
                 self.block.y += 1
-            if self.check_collision(self.board, self.block):
+            if self.check_collision_bottom(self.board, self.block):
                 self.add_block_to_board(self.board, self.block)
                 self.block = None
             board = self.board.copy()
             if self.block is not None:
+                self.add_block_to_board(board, self.block)
+            return board, self.gameover
+
+        if event_type == EventTypes.LEFT:
+            board = self.board.copy()
+            if self.block is not None:
+                if not self.check_collision_left(board, self.block):
+                    self.block.x -= 1
+                self.add_block_to_board(board, self.block)
+            return board, self.gameover
+
+        if event_type == EventTypes.RIGHT:
+            board = self.board.copy()
+            if self.block is not None:
+                if not self.check_collision_right(board, self.block):
+                    self.block.x += 1
                 self.add_block_to_board(board, self.block)
             return board, self.gameover
 
@@ -135,7 +156,21 @@ class RuleBasedTetrisEngine(TetrisEngine):
             0,
         )
 
-    def check_collision(self, board, block):
+    def check_collision_left(self, board, block):
+        if block.left <= 0:
+            return True
+        board_view = board[block.top : block.bottom, block.left - 1 : block.right - 1]
+        overlap = block.shape & board_view
+        return overlap.any()
+
+    def check_collision_right(self, board, block):
+        if block.right >= board.shape[1]:
+            return True
+        board_view = board[block.top : block.bottom, block.left + 1 : block.right + 1]
+        overlap = block.shape & board_view
+        return overlap.any()
+
+    def check_collision_bottom(self, board, block):
         if block.bottom >= board.shape[0]:
             return True
         board_view = board[block.top + 1 : block.bottom + 1, block.left : block.right]

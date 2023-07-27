@@ -70,7 +70,7 @@ class TetrisApp(object):
         self.level = 1
         self.score = 0
         self.lines = 0
-        pygame.time.set_timer(pygame.USEREVENT + 1, 100)  # Was 1000
+        pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
 
     def disp_msg(self, msg, topleft):
         x, y = topleft
@@ -126,9 +126,6 @@ class TetrisApp(object):
             newdelay = 100 if newdelay < 100 else newdelay
             pygame.time.set_timer(pygame.USEREVENT + 1, newdelay)
 
-    def move(self, delta_x):
-        raise NotImplementedError()
-
     def quit(self):
         self.center_msg("Exiting...")
         pygame.display.update()
@@ -138,6 +135,10 @@ class TetrisApp(object):
         if not self.gameover and not self.paused:
             self.score += 1 if manual else 0
             self.board, self.gameover = self.engine.step(EventTypes.DROP)
+
+    def step_model(self, event):
+        if not self.gameover and not self.paused:
+            self.board, self.gameover = self.engine.step(event)
 
     def insta_drop(self):
         raise NotImplementedError()
@@ -156,8 +157,8 @@ class TetrisApp(object):
     def run(self):
         key_actions = {
             "ESCAPE": self.quit,
-            "LEFT": lambda: self.move(-1),
-            "RIGHT": lambda: self.move(+1),
+            "LEFT": lambda: self.step_model(EventTypes.LEFT),
+            "RIGHT": lambda: self.step_model(EventTypes.RIGHT),
             "DOWN": lambda: self.drop(True),
             "UP": self.rotate_block,
             "p": self.toggle_pause,
