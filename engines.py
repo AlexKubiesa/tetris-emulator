@@ -6,7 +6,7 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 
-from recording import RecordingDatabase
+import recording
 from models import TetrisModel
 
 
@@ -150,25 +150,28 @@ class RuleBasedTetrisEngine(TetrisEngine):
 class RecordingTetrisEngine(TetrisEngine):
     """A Tetris engine decorator that captures gameplay data."""
 
-    buffer_length = 2
-
     def __init__(self, engine: TetrisEngine, folder: str):
         self.engine = engine
-        self.db = RecordingDatabase(folder)
-        self.board_buffer = []
+        self.db = recording.FileBasedDatabaseWithActions(folder)
+        self.board_1 = None
+        self.board_2 = None
+        self.event = None
 
     def reset(self) -> tuple[npt.NDArray[np.int32], bool]:
-        self.board_buffer.clear()
+        self.board_1 = None
+        self.event = None
         board, gameover = self.engine.reset()
-        self.board_buffer.append(board)
+        self.board_2 = board
         return board, gameover
 
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         board, gameover = self.engine.step(event_type)
-        self.board_buffer.append(board)
-        if len(self.board_buffer) >= self.buffer_length:
-            self.db.insert(np.array(self.board_buffer))
-            self.board_buffer.clear()
+        self.board_1 = self.board_2
+        self.board_2 = board
+        self.event = event_type
+        boards = np.array([self.board_1, self.board_2])
+        events = np.array([self.event])
+        self.db.insert(boards, events)
         return board, gameover
 
 
