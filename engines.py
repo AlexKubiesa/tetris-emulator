@@ -28,6 +28,8 @@ class EventTypes:
     RIGHT = 2
     # User wants to rotate block
     ROTATE = 3
+    # The user wants to instantly drop a block so it lands
+    INSTA_DROP = 4
 
 
 class TetrisEngine(ABC):
@@ -176,6 +178,17 @@ class RuleBasedTetrisEngine(TetrisEngine):
                     self.add_block_to_board(self.board, self.block)
                     self.block = None
 
+            board = self.board.copy()
+            if self.block is not None:
+                self.add_block_to_board(board, self.block)
+            return board, self.gameover
+
+        if event_type == EventTypes.INSTA_DROP:
+            if self.block is not None:
+                while not self.check_collision(self.board, self.block, offset=(0, 1)):
+                    self.block.y += 1
+                self.add_block_to_board(self.board, self.block)
+                self.block = None
             board = self.board.copy()
             if self.block is not None:
                 self.add_block_to_board(board, self.block)

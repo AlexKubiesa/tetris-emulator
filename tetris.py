@@ -140,12 +140,6 @@ class TetrisApp(object):
         if not self.gameover and not self.paused:
             self.board, self.gameover = self.engine.step(event)
 
-    def insta_drop(self):
-        raise NotImplementedError()
-
-    def rotate_block(self):
-        raise NotImplementedError()
-
     def toggle_pause(self):
         self.paused = not self.paused
 
@@ -163,7 +157,7 @@ class TetrisApp(object):
             "UP": lambda: self.step_model(EventTypes.ROTATE),
             "p": self.toggle_pause,
             "SPACE": self.start_game,
-            "RETURN": self.insta_drop,
+            "RETURN": lambda: self.step_model(EventTypes.INSTA_DROP),
         }
 
         self.gameover = False
