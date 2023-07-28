@@ -125,6 +125,7 @@ class RuleBasedTetrisEngine(TetrisEngine):
                 self.gameover = True
                 return self.board, self.gameover
             if self.block is None:
+                self.board = self.clear_rows(self.board)
                 self.new_block()
             else:
                 self.block.y += 1
@@ -201,6 +202,16 @@ class RuleBasedTetrisEngine(TetrisEngine):
             int(self.cols / 2 - shape.shape[1] / 2),
             0,
         )
+
+    def clear_rows(self, board):
+        """Clears any filled rows on the board and moves the remaining rows down."""
+        idxs_to_clear = board.min(axis=-1).nonzero()[0]
+        new_board = list(board)
+        for idx in reversed(idxs_to_clear):
+            del new_board[idx]
+        new_board = [np.zeros(self.cols)] * len(idxs_to_clear) + new_board
+        new_board = np.array(new_board, dtype=np.int32)
+        return new_board
 
     def check_collision(self, board, block, offset=(0, 0)):
         """Checks whether the block overflows the board boundary or overlaps filled cells on the board, when offset by the given amount."""

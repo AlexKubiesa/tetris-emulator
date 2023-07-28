@@ -116,16 +116,6 @@ class TetrisApp(object):
                         0,
                     )
 
-    def add_cl_lines(self, n):
-        linescores = [0, 40, 100, 300, 1200]
-        self.lines += n
-        self.score += linescores[n] * self.level
-        if self.lines >= self.level * 6:
-            self.level += 1
-            newdelay = 1000 - 50 * (self.level - 1)
-            newdelay = 100 if newdelay < 100 else newdelay
-            pygame.time.set_timer(pygame.USEREVENT + 1, newdelay)
-
     def quit(self):
         self.center_msg("Exiting...")
         pygame.display.update()
