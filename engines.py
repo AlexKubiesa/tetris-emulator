@@ -10,15 +10,6 @@ import recording
 from models import TetrisModel
 
 
-class CellTypes:
-    # A cell beyond the edge of the board.
-    BOUNDARY = -1
-    # An empty cell.
-    EMPTY = 0
-    # A cell with a block in it.
-    BLOCK = 1
-
-
 class EventTypes:
     # Block should drop one space - timer ticked or user pressed Down
     DROP = 0
@@ -61,14 +52,14 @@ class TetrisEngine(ABC):
         pass
 
 
-tetris_shapes = [
+TETRIS_SHAPES = [
     np.array([[1, 1, 1], [0, 1, 0]], dtype=np.int32),
-    np.array([[0, 1, 1], [1, 1, 0]], dtype=np.int32),
-    np.array([[1, 1, 0], [0, 1, 1]], dtype=np.int32),
-    np.array([[1, 0, 0], [1, 1, 1]], dtype=np.int32),
-    np.array([[0, 0, 1], [1, 1, 1]], dtype=np.int32),
-    np.array([[1, 1, 1, 1]], dtype=np.int32),
-    np.array([[1, 1], [1, 1]], dtype=np.int32),
+    np.array([[0, 2, 2], [2, 2, 0]], dtype=np.int32),
+    np.array([[3, 3, 0], [0, 3, 3]], dtype=np.int32),
+    np.array([[4, 0, 0], [4, 4, 4]], dtype=np.int32),
+    np.array([[0, 0, 5], [5, 5, 5]], dtype=np.int32),
+    np.array([[6, 6, 6, 6]], dtype=np.int32),
+    np.array([[7, 7], [7, 7]], dtype=np.int32),
 ]
 
 
@@ -196,7 +187,7 @@ class RuleBasedTetrisEngine(TetrisEngine):
             return board, self.gameover
 
     def new_block(self):
-        shape = random.choice(tetris_shapes)
+        shape = random.choice(TETRIS_SHAPES)
         self.block = Block(
             shape,
             int(self.cols / 2 - shape.shape[1] / 2),
@@ -229,7 +220,7 @@ class RuleBasedTetrisEngine(TetrisEngine):
             block.left + off_x : block.right + off_x,
         ]
 
-        overlap = block.shape & board_view
+        overlap = (block.shape != 0) & (board_view != 0)
         return overlap.any()
 
     def add_block_to_board(self, board, block):
