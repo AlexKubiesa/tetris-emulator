@@ -233,7 +233,7 @@ class RecordingTetrisEngine(TetrisEngine):
 
     def __init__(self, engine: TetrisEngine, folder: str):
         self.engine = engine
-        self.db = recording.FileBasedDatabaseWithActions(folder)
+        self.db = recording.FileBasedDatabaseWithEvents(folder)
         self.board_1 = None
         self.board_2 = None
         self.event = None

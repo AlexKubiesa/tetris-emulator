@@ -80,10 +80,11 @@ class RecordingDatabase:
         self._count -= len(idxs)
 
 
-class FileBasedDatabaseWithActions:
+class FileBasedDatabaseWithEvents:
     def __init__(self, path: str):
         if not os.path.exists(path):
-            raise FileNotFoundError()
+            logging.info("Directory %s will be created as it does not exist.", path)
+            os.makedirs(path)
 
         self._path = path
         self._boards_filename = "boards.npy"
@@ -119,8 +120,8 @@ class FileBasedDatabaseWithActions:
         folder = Path(self._path) / str(idx)
         if not os.path.exists(folder):
             raise IndexError()
-        boards = np.load(Path(self._path) / self._boards_filename)
-        actions = np.load(Path(self._path) / self._events_filename)
+        boards = np.load(folder / self._boards_filename)
+        actions = np.load(folder / self._events_filename)
         return boards, actions
 
     def insert(self, boards, events):
