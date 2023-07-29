@@ -9,30 +9,6 @@ NUM_SPAWN_TYPES = 7
 BLOCKS = [
     torch.tensor(
         [
-            [0, 0, 0, 1, 1, 1, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ],
-        dtype=torch.int,
-    ),  # I
-    torch.tensor(
-        [
-            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ],
-        dtype=torch.int,
-    ),  # O
-    torch.tensor(
-        [
-            [0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ],
-        dtype=torch.int,
-    ),  # J
-    torch.tensor(
-        [
             [0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -41,28 +17,52 @@ BLOCKS = [
     ),  # T
     torch.tensor(
         [
-            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
-            [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 2, 2, 0, 0, 0, 0],
+            [0, 0, 0, 2, 2, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
         dtype=torch.int,
     ),  # S
     torch.tensor(
         [
-            [0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+            [0, 0, 0, 3, 3, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 3, 3, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=torch.int,
+    ),  # Z
+    torch.tensor(
+        [
+            [0, 0, 0, 4, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 4, 4, 4, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=torch.int,
+    ),  # J
+    torch.tensor(
+        [
+            [0, 0, 0, 0, 0, 5, 0, 0, 0, 0],
+            [0, 0, 0, 5, 5, 5, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
         dtype=torch.int,
     ),  # L
     torch.tensor(
         [
-            [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+            [0, 0, 0, 6, 6, 6, 6, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
         dtype=torch.int,
-    ),  # Z
+    ),  # I
+    torch.tensor(
+        [
+            [0, 0, 0, 0, 7, 7, 0, 0, 0, 0],
+            [0, 0, 0, 0, 7, 7, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+        dtype=torch.int,
+    ),  # O
 ]
 
 
@@ -78,11 +78,16 @@ def get_block_spawn_type(classes_x, classes_y):
     """
 
     # Take difference to see which cells are full but weren't before.
-    diff = classes_y - classes_x
+    diff = (classes_y - classes_x)[:3, :]
 
     # Each example in the batch will be matched by at most one spawn type, and when it matches, we return that spawn type.
     for type, block in enumerate(BLOCKS):
-        if (diff[:3, :] == block).all(-1).all(-1).item():
+        # If the first frame overlaps with the block that should spawn, then it's not a spawn
+        if ((classes_x > 0) & (block > 0)).any():
+            continue
+        # Given the first frame is zero wherever the block is nonzero, check that the specified block appeared and that
+        # no other cells in the first three rows changed.
+        if (diff == block).all(-1).all(-1).item():
             return type
 
     return None

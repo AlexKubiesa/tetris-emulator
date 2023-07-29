@@ -2,11 +2,11 @@
 
 # Control keys:
 #       Down - Drop block faster
-# Left/Right - Move block (not implemented)
-#         Up - Rotate block clockwise (not implemented)
+# Left/Right - Move block
+#         Up - Rotate block clockwise
 #     Escape - Quit game
 #          P - Pause game
-#     Return - Instant drop (not implemented)
+#     Return - Instant drop
 
 
 import sys

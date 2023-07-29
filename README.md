@@ -41,17 +41,15 @@ You can also run the emulation in Visual Studio Code, where some launch profiles
 
 ## Current capabilities
 
-* Spawn new blocks when no block is falling.
-* Make blocks fall on timer tick.
+I have recently made the model aware of user key presses and different cells types, and the newly trained model is performing poorly at the moment. Please bear with me while I improve the model on the new dataset.
+
+* ~~Spawn new blocks when no block is falling.~~
+* ~~Make blocks fall on timer tick.~~
 
 
 ## Planned work
 
-* Block spawns are currently always of the same type. Instead, the model should spawn all 7 types of block with equal probability.
-* Take into account user key presses: Down to drop block faster, Left/Right to move block, Up to rotate block and Return to drop block instantly.
-* Clear rows when filled.
-* Blocks are currently all of the same colour, but it would look nicer if they all had different colours. To support this, the model should support 8 cell types (empty plus the 7 colours) instead of the current 2.
-* Increase the score when a user clears rows or manually drops blocks.
+* Make blocks spawn reliably.
 
 
 ## Limitations

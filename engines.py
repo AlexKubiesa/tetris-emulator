@@ -25,6 +25,9 @@ class EventTypes:
 
 EVENT_NAMES = ["Drop", "Left", "Right", "Rotate", "Insta-drop"]
 
+NUM_CELL_TYPES = 8
+NUM_EVENT_TYPES = 5
+
 
 class TetrisEngine(ABC):
     """The Tetris engine runs the main body of the game. It is responsible for predicting the next state of
@@ -281,17 +284,25 @@ class ModelBasedTetrisEngine(TetrisEngine):
     def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         if self.board is None:
             raise RuntimeError("`reset` must be called before `step`.")
+
         with torch.no_grad():
-            X = torch.tensor(self.board, dtype=torch.long)
-            X = F.one_hot(X, 2)
-            X = X.type(torch.float)
-            X = X.permute((2, 0, 1))
-            X = X.unsqueeze(0)
-            probs = self.model(X).squeeze(0)
+            b = torch.tensor(self.board, dtype=torch.long)
+            b = F.one_hot(b, NUM_CELL_TYPES)
+            b = b.type(torch.float)
+            b = b.permute((2, 0, 1))
+            b = b.unsqueeze(0)
+
+            e = torch.tensor(event_type, dtype=torch.long)
+            e = F.one_hot(e, NUM_EVENT_TYPES)
+            e = e.type(torch.float)
+            e = e.unsqueeze(0)
+
+            probs = self.model(b, e).squeeze(0)
             probs = probs.numpy()
+
         if self.mode == "prob":
-            thresholds = self.rng.random(size=probs.shape[1:], dtype=probs.dtype)
-            np.greater(probs[1], thresholds, out=self.board)
+            raise NotImplementedError()
         else:
             np.argmax(probs, axis=0, out=self.board)
+
         return self.board, False
