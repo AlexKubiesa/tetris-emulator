@@ -223,9 +223,9 @@ class SpawnPrecision:
         self.num_spawns_pred = np.float32(0.0)
 
     def update_state(self, classes_x, classes_y_pred, classes_y):
-        spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] == 1).any(-1)
+        spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] > 0).any(-1)
         spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
-            classes_y_pred[:, 0, :] == 1
+            classes_y_pred[:, 0, :] > 0
         ).any(-1)
 
         self.num_true_positives += (
@@ -246,9 +246,9 @@ class SpawnRecall:
         self.num_spawns = 0
 
     def update_state(self, classes_x, classes_y_pred, classes_y):
-        spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] == 1).any(-1)
+        spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] > 0).any(-1)
         spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
-            classes_y_pred[:, 0, :] == 1
+            classes_y_pred[:, 0, :] > 0
         ).any(-1)
 
         self.num_true_positives += (spawns & spawns_pred).type(torch.int).sum().item()
@@ -268,7 +268,7 @@ class SpawnValidity:
 
     def update_state(self, classes_x, classes_y_pred):
         spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
-            classes_y_pred[:, 0, :] == 1
+            classes_y_pred[:, 0, :] > 0
         ).any(-1)
 
         num_valid_spawns_pred = np.float32(0.0)
