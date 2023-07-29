@@ -23,6 +23,9 @@ class EventTypes:
     INSTA_DROP = 4
 
 
+EVENT_NAMES = ["Drop", "Left", "Right", "Rotate", "Insta-drop"]
+
+
 class TetrisEngine(ABC):
     """The Tetris engine runs the main body of the game. It is responsible for predicting the next state of
     the board at each time step.
