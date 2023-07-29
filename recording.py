@@ -168,3 +168,15 @@ class FileBasedDatabaseWithEvents:
 
         # Adjust count
         self._count -= len(idxs)
+
+    def delete_all(self):
+        # Delete folders
+        # We can't just call shutil.rmtree on the whole folder as there might be other subfolders (e.g. nested databases,
+        # as in the data preparation notebook).
+        for idx in range(self._count):
+            folder = Path(self._path) / str(idx)
+            logging.debug("Deleting '%s'", folder)
+            shutil.rmtree(folder)
+
+        # Adjust count
+        self._count = 0
