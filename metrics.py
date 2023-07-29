@@ -83,7 +83,7 @@ def get_block_spawn_type(classes_x, classes_y):
     # Each example in the batch will be matched by at most one spawn type, and when it matches, we return that spawn type.
     for type, block in enumerate(BLOCKS):
         # If the first frame overlaps with the block that should spawn, then it's not a spawn
-        if ((classes_x > 0) & (block > 0)).any():
+        if ((classes_x[:3, :] > 0) & (block > 0)).any():
             continue
         # Given the first frame is zero wherever the block is nonzero, check that the specified block appeared and that
         # no other cells in the first three rows changed.
