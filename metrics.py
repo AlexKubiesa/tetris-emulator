@@ -103,7 +103,7 @@ class BoardAccuracy:
         self.num_correct = 0
         self.dataset_size = 0
 
-    def update_state(self, classes_y_pred, classes_y):
+    def update_state(self, classes_y_pred, classes_y, **kwargs):
         self.num_correct += (
             (classes_y_pred == classes_y).all(-1).all(-1).type(torch.int).sum().item()
         )
@@ -123,7 +123,7 @@ class BoardPlausibility:
         self.num_plausible = 0
         self.dataset_size = 0
 
-    def update_state(self, classes_x, classes_y_pred, classes_y):
+    def update_state(self, classes_x, classes_y_pred, classes_y, **kwargs):
         for i in range(classes_x.size(0)):
             y_spawn_type = get_block_spawn_type(classes_x[i], classes_y[i])
             if y_spawn_type is None:
@@ -163,7 +163,7 @@ class CellAccuracy:
         self.num_correct = 0
         self.dataset_size = 0
 
-    def update_state(self, classes_y_pred, classes_y):
+    def update_state(self, classes_y_pred, classes_y, **kwargs):
         self.num_correct += (
             (classes_y_pred == classes_y)
             .type(torch.float)
@@ -190,7 +190,7 @@ class SpawnDiversity:
     def reset_state(self):
         self.predicted_spawn_type_counts.fill(0)
 
-    def update_state(self, classes_x, classes_y_pred):
+    def update_state(self, classes_x, classes_y_pred, **kwargs):
         """Accumulates the metric based on a batch of data and predictions.
 
         Inputs:
@@ -222,7 +222,7 @@ class SpawnPrecision:
         self.num_true_positives = np.float32(0.0)
         self.num_spawns_pred = np.float32(0.0)
 
-    def update_state(self, classes_x, classes_y_pred, classes_y):
+    def update_state(self, classes_x, classes_y_pred, classes_y, **kwargs):
         spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] > 0).any(-1)
         spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
             classes_y_pred[:, 0, :] > 0
@@ -245,7 +245,7 @@ class SpawnRecall:
         self.num_true_positives = 0
         self.num_spawns = 0
 
-    def update_state(self, classes_x, classes_y_pred, classes_y):
+    def update_state(self, classes_x, classes_y_pred, classes_y, **kwargs):
         spawns = (classes_x[:, 0, :] == 0).all(-1) & (classes_y[:, 0, :] > 0).any(-1)
         spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
             classes_y_pred[:, 0, :] > 0
@@ -266,7 +266,7 @@ class SpawnValidity:
         self.num_valid_spawns_pred = np.float32(0.0)
         self.num_spawns_pred = np.float32(0.0)
 
-    def update_state(self, classes_x, classes_y_pred):
+    def update_state(self, classes_x, classes_y_pred, **kwargs):
         spawns_pred = (classes_x[:, 0, :] == 0).all(-1) & (
             classes_y_pred[:, 0, :] > 0
         ).any(-1)
