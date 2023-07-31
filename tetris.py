@@ -67,9 +67,6 @@ class TetrisApp(object):
 
     def init_game(self):
         self.board, self.gameover = self.engine.reset()
-        self.level = 1
-        self.score = 0
-        self.lines = 0
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
 
     def disp_msg(self, msg, topleft):
@@ -121,11 +118,6 @@ class TetrisApp(object):
         pygame.display.update()
         sys.exit()
 
-    def drop(self, manual):
-        if not self.gameover and not self.paused:
-            self.score += 1 if manual else 0
-            self.board, self.gameover = self.engine.step(EventTypes.DROP)
-
     def step_model(self, event):
         if not self.gameover and not self.paused:
             self.board, self.gameover = self.engine.step(event)
@@ -143,7 +135,7 @@ class TetrisApp(object):
             "ESCAPE": self.quit,
             "LEFT": lambda: self.step_model(EventTypes.LEFT),
             "RIGHT": lambda: self.step_model(EventTypes.RIGHT),
-            "DOWN": lambda: self.drop(True),
+            "DOWN": lambda: self.step_model(EventTypes.DROP),
             "UP": lambda: self.step_model(EventTypes.ROTATE),
             "p": self.toggle_pause,
             "SPACE": self.start_game,
@@ -157,9 +149,7 @@ class TetrisApp(object):
         while 1:
             self.screen.fill((0, 0, 0))
             if self.gameover:
-                self.center_msg(
-                    f"Game Over!\nYour score: {self.score}\nPress space to continue"
-                )
+                self.center_msg(f"Game Over!\nPress space to continue")
             else:
                 if self.paused:
                     self.center_msg("Paused")
@@ -170,18 +160,13 @@ class TetrisApp(object):
                         (self.rlim + 1, 0),
                         (self.rlim + 1, self.height - 1),
                     )
-                    self.disp_msg("Next:", (self.rlim + CELL_SIZE, 2))
-                    self.disp_msg(
-                        f"Score: {self.score}\n\nLevel: {self.level}\nLines: {self.lines}",
-                        (self.rlim + CELL_SIZE, CELL_SIZE * 5),
-                    )
                     self.draw_matrix(self.bground_grid, (0, 0))
                     self.draw_matrix(self.board, (0, 0))
             pygame.display.update()
 
             for event in pygame.event.get():
                 if event.type == pygame.USEREVENT + 1:
-                    self.drop(False)
+                    self.step_model(EventTypes.DROP)
                 elif event.type == pygame.QUIT:
                     self.quit()
                 elif event.type == pygame.KEYDOWN:
