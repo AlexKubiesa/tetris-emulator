@@ -82,6 +82,8 @@ def get_block_spawn_type(classes_x, classes_y):
 
     # Each example in the batch will be matched by at most one spawn type, and when it matches, we return that spawn type.
     for type, block in enumerate(BLOCKS):
+        block = block.to(classes_x.device)
+
         # If the first frame overlaps with the block that should spawn, then it's not a spawn
         if ((classes_x[:3, :] > 0) & (block > 0)).any():
             continue
@@ -229,9 +231,9 @@ class SpawnPrecision:
         ).any(-1)
 
         self.num_true_positives += (
-            (spawns & spawns_pred).type(torch.float).sum().numpy()
+            (spawns & spawns_pred).type(torch.float).sum().cpu().numpy()
         )
-        self.num_spawns_pred += spawns_pred.type(torch.float).sum().numpy()
+        self.num_spawns_pred += spawns_pred.type(torch.float).sum().cpu().numpy()
 
     def result(self):
         return self.num_true_positives / self.num_spawns_pred
@@ -282,7 +284,7 @@ class SpawnValidity:
             self.num_valid_spawns_pred += np.float32(valid_spawn)
 
         self.num_valid_spawns_pred += num_valid_spawns_pred
-        self.num_spawns_pred += spawns_pred.type(torch.float).sum().numpy()
+        self.num_spawns_pred += spawns_pred.type(torch.float).sum().cpu().numpy()
 
     def result(self):
         return self.num_valid_spawns_pred / self.num_spawns_pred
