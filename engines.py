@@ -301,7 +301,10 @@ class ModelBasedTetrisEngine(TetrisEngine):
             probs = probs.numpy()
 
         if self.mode == "prob":
-            raise NotImplementedError()
+            channels, height, width = probs.shape
+            thresholds = np.cumsum(probs, axis=0)
+            randoms = self.rng.random((height, width))
+            np.sum(randoms > thresholds, axis=0, out=self.board)
         else:
             np.argmax(probs, axis=0, out=self.board)
 
