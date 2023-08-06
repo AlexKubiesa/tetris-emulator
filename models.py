@@ -154,3 +154,165 @@ class TetrisDiscriminator(nn.Module):
 
         logits = self.body(x)
         return logits
+
+
+class Conv2dLeakyReLU(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        use_batch_norm=False,
+        negative_slope=0.0,
+    ):
+        super().__init__()
+
+        self.use_batch_norm = use_batch_norm
+
+        self.conv = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            bias=(not use_batch_norm),
+        )
+        nn.init.kaiming_uniform_(self.conv.weight, a=negative_slope)
+        if not use_batch_norm:
+            nn.init.constant_(self.conv.bias, 0.01)
+
+        if use_batch_norm:
+            self.norm = nn.BatchNorm2d(out_channels)
+
+        self.relu = nn.LeakyReLU(negative_slope)
+
+    def forward(self, x):
+        x = self.conv(x)
+        if self.use_batch_norm:
+            x = self.norm(x)
+        x = self.relu(x)
+        return x
+
+
+class ConvTranspose2dLeakyReLU(nn.Module):
+    def __init__(
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        output_padding=0,
+        use_batch_norm=False,
+        negative_slope=0.0,
+    ):
+        super().__init__()
+
+        self.use_batch_norm = use_batch_norm
+
+        self.conv = nn.ConvTranspose2d(
+            in_channels,
+            out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            output_padding=output_padding,
+            bias=(not use_batch_norm),
+        )
+        nn.init.kaiming_uniform_(self.conv.weight, a=negative_slope)
+        if not use_batch_norm:
+            nn.init.constant_(self.conv.bias, 0.01)
+
+        if use_batch_norm:
+            self.norm = nn.BatchNorm2d(out_channels)
+
+        self.relu = nn.LeakyReLU(negative_slope)
+
+    def forward(self, x):
+        x = self.conv(x)
+        if self.use_batch_norm:
+            x = self.norm(x)
+        x = self.relu(x)
+        return x
+
+
+class LinearLeakyReLU(nn.Module):
+    def __init__(self, in_features, out_features, negative_slope=0.0):
+        super().__init__()
+
+        self.linear = nn.Linear(in_features, out_features)
+        nn.init.kaiming_uniform_(self.linear.weight, a=negative_slope)
+        nn.init.constant_(self.linear.bias, 0.01)
+
+        self.relu = nn.LeakyReLU(negative_slope)
+
+    def forward(self, x):
+        x = self.linear(x)
+        x = self.relu(x)
+        return x
+
+
+class GameganAutoencoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        use_batch_norm = True
+        leak = 0.2
+
+        self.board_encoder = nn.Sequential(
+            Conv2dLeakyReLU(
+                NUM_CELL_TYPES,
+                64,
+                kernel_size=2,
+                stride=2,
+                use_batch_norm=use_batch_norm,
+                negative_slope=leak,
+            ),
+            Conv2dLeakyReLU(
+                64,
+                64,
+                kernel_size=3,
+                use_batch_norm=use_batch_norm,
+                negative_slope=leak,
+            ),
+            Conv2dLeakyReLU(
+                64,
+                64,
+                kernel_size=3,
+                use_batch_norm=use_batch_norm,
+                negative_slope=leak,
+            ),
+            nn.Flatten(start_dim=1),
+            LinearLeakyReLU(448, 256, negative_slope=leak),
+        )
+
+        self.renderer = nn.Sequential(
+            LinearLeakyReLU(256, 448, negative_slope=leak),
+            nn.Unflatten(dim=1, unflattened_size=(64, 7, 1)),
+            ConvTranspose2dLeakyReLU(
+                64,
+                64,
+                kernel_size=3,
+                use_batch_norm=use_batch_norm,
+                negative_slope=leak,
+            ),
+            ConvTranspose2dLeakyReLU(
+                64,
+                64,
+                kernel_size=3,
+                use_batch_norm=use_batch_norm,
+                negative_slope=leak,
+            ),
+            nn.ConvTranspose2d(64, NUM_CELL_TYPES, kernel_size=2, stride=2),
+            nn.Softmax(dim=1),
+        )
+
+    def forward(self, b):
+        # Encode board state
+        s = self.board_encoder(b)
+
+        # Render new board
+        y = self.renderer(s)
+        return y
