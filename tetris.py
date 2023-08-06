@@ -66,7 +66,8 @@ class TetrisApp(object):
         self.init_game()
 
     def init_game(self):
-        self.board, self.gameover = self.engine.reset()
+        self.board = self.engine.reset()
+        self.gameover = False
         pygame.time.set_timer(pygame.USEREVENT + 1, 1000)
 
     def disp_msg(self, msg, topleft):
@@ -119,8 +120,22 @@ class TetrisApp(object):
         sys.exit()
 
     def step_model(self, event):
-        if not self.gameover and not self.paused:
-            self.board, self.gameover = self.engine.step(event)
+        # Respect gameover and pause
+        if self.gameover or self.paused:
+            return
+
+        # Check if top row has any cells filled before the step
+        if event == EventTypes.DROP:
+            top_row_blocked_before = (self.board[0] > 0).any()
+
+        # Pass board to engine to update
+        self.board = self.engine.step(event)
+
+        # Gameover if the event is a block drop and the top row has filled cells before and after
+        if event == EventTypes.DROP:
+            top_row_blocked_after = (self.board[0] > 0).any()
+            if top_row_blocked_before and top_row_blocked_after:
+                self.gameover = True
 
     def toggle_pause(self):
         self.paused = not self.paused
