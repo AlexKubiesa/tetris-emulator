@@ -128,16 +128,14 @@ class RuleBasedTetrisEngine(TetrisEngine):
                 if not self.check_collision(self.board, self.block, offset=(-1, 0)):
                     self.block.x -= 1
                     if self.check_collision(self.board, self.block, offset=(0, 1)):
-                        self.add_block_to_board(self.board, self.block)
-                        self.block = None
+                        self.land_block()
 
         elif event_type == EventTypes.RIGHT:
             if self.block is not None:
                 if not self.check_collision(self.board, self.block, offset=(1, 0)):
                     self.block.x += 1
                     if self.check_collision(self.board, self.block, offset=(0, 1)):
-                        self.add_block_to_board(self.board, self.block)
-                        self.block = None
+                        self.land_block()
 
         elif event_type == EventTypes.ROTATE:
             if self.block is not None:
@@ -162,15 +160,13 @@ class RuleBasedTetrisEngine(TetrisEngine):
                     self.block = rotated_block
 
                 if self.check_collision(self.board, self.block, offset=(0, 1)):
-                    self.add_block_to_board(self.board, self.block)
-                    self.block = None
+                    self.land_block()
 
         elif event_type == EventTypes.INSTA_DROP:
             if self.block is not None:
                 while not self.check_collision(self.board, self.block, offset=(0, 1)):
                     self.block.y += 1
-                self.add_block_to_board(self.board, self.block)
-                self.block = None
+                self.land_block()
 
         board = self.board.copy()
         if self.block is not None:
@@ -213,6 +209,10 @@ class RuleBasedTetrisEngine(TetrisEngine):
 
         overlap = (block.shape != 0) & (board_view != 0)
         return overlap.any()
+
+    def land_block(self):
+        self.add_block_to_board(self.board, self.block)
+        self.block = None
 
     def add_block_to_board(self, board, block):
         board_view = board[block.top : block.bottom, block.left : block.right]
