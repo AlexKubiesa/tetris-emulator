@@ -122,28 +122,24 @@ class RuleBasedTetrisEngine(TetrisEngine):
             if self.check_collision(self.board, self.block, offset=(0, 1)):
                 self.add_block_to_board(self.board, self.block)
                 self.block = None
-            board = self.board.copy()
-            if self.block is not None:
-                self.add_block_to_board(board, self.block)
-            return board
 
-        if event_type == EventTypes.LEFT:
-            board = self.board.copy()
+        elif event_type == EventTypes.LEFT:
             if self.block is not None:
-                if not self.check_collision(board, self.block, offset=(-1, 0)):
+                if not self.check_collision(self.board, self.block, offset=(-1, 0)):
                     self.block.x -= 1
-                self.add_block_to_board(board, self.block)
-            return board
+                    if self.check_collision(self.board, self.block, offset=(0, 1)):
+                        self.add_block_to_board(self.board, self.block)
+                        self.block = None
 
-        if event_type == EventTypes.RIGHT:
-            board = self.board.copy()
+        elif event_type == EventTypes.RIGHT:
             if self.block is not None:
-                if not self.check_collision(board, self.block, offset=(1, 0)):
+                if not self.check_collision(self.board, self.block, offset=(1, 0)):
                     self.block.x += 1
-                self.add_block_to_board(board, self.block)
-            return board
+                    if self.check_collision(self.board, self.block, offset=(0, 1)):
+                        self.add_block_to_board(self.board, self.block)
+                        self.block = None
 
-        if event_type == EventTypes.ROTATE:
+        elif event_type == EventTypes.ROTATE:
             if self.block is not None:
                 rotated_block = Block(
                     np.rot90(self.block.shape, -1), self.block.x, self.block.y
@@ -169,21 +165,17 @@ class RuleBasedTetrisEngine(TetrisEngine):
                     self.add_block_to_board(self.board, self.block)
                     self.block = None
 
-            board = self.board.copy()
-            if self.block is not None:
-                self.add_block_to_board(board, self.block)
-            return board
-
-        if event_type == EventTypes.INSTA_DROP:
+        elif event_type == EventTypes.INSTA_DROP:
             if self.block is not None:
                 while not self.check_collision(self.board, self.block, offset=(0, 1)):
                     self.block.y += 1
                 self.add_block_to_board(self.board, self.block)
                 self.block = None
-            board = self.board.copy()
-            if self.block is not None:
-                self.add_block_to_board(board, self.block)
-            return board
+
+        board = self.board.copy()
+        if self.block is not None:
+            self.add_block_to_board(board, self.block)
+        return board
 
     def new_block(self):
         shape = random.choice(TETRIS_SHAPES)
