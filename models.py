@@ -327,3 +327,55 @@ class GameganAutoencoder(nn.Module):
         # Render new board
         y = self.renderer(s)
         return y
+
+
+class GameganGenerator(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        self.device = None
+        leak = 0.2
+
+        self.board_encoder = GameganBoardEncoder()
+
+        self.event_encoder = nn.Sequential(
+            LinearLeakyReLU(
+                NUM_EVENT_TYPES + NUM_RANDOM_INPUTS, 32, negative_slope=leak
+            ),
+            LinearLeakyReLU(32, 32, negative_slope=leak),
+            LinearLeakyReLU(32, 32, negative_slope=leak),
+        )
+
+        self.dynamics = nn.Sequential(
+            LinearLeakyReLU(256 + 32, 256, negative_slope=leak),
+            LinearLeakyReLU(256, 256, negative_slope=leak),
+            LinearLeakyReLU(256, 256, negative_slope=leak),
+        )
+
+        self.renderer = GameganRenderer()
+
+    def forward(self, b, e):
+        batch_size, cell_channels, height, width = b.shape
+
+        # Encode board state
+        s = self.board_encoder(b)
+
+        # Generate random inputs
+        z = torch.rand(batch_size, NUM_RANDOM_INPUTS, device=self.device)
+
+        # Encode events and random inputs
+        v = self.event_encoder(torch.cat((e, z), dim=1))
+
+        # Combine encodings
+        h = torch.cat((s, v), dim=1)
+
+        # Apply game dynamics
+        h = self.dynamics(h)
+
+        # Render new board
+        y = self.renderer(h)
+        return y
+
+    def to(self, device):
+        super().to(device)
+        self.device = device

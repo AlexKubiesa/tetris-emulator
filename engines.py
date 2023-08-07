@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 
 import recording
-from models import TetrisModel
+import models
 
 
 class EventTypes:
@@ -254,8 +254,8 @@ class ModelBasedTetrisEngine(TetrisEngine):
         if mode not in ["normal", "prob"]:
             raise ValueError()
         self.mode = mode
-        self.model = TetrisModel()
-        self.model.load_state_dict(torch.load("tetris_emulator.pth"))
+        self.model = models.GameganGenerator()
+        self.model.load_state_dict(torch.load("gamegan_emulator.pth"))
         self.model.eval()
         self.rng = np.random.default_rng()
         self.board = None
