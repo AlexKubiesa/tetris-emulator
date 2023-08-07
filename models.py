@@ -254,14 +254,12 @@ class LinearLeakyReLU(nn.Module):
         return x
 
 
-class GameganAutoencoder(nn.Module):
+class GameganBoardEncoder(nn.Sequential):
     def __init__(self):
-        super().__init__()
-
         use_batch_norm = True
         leak = 0.2
 
-        self.board_encoder = nn.Sequential(
+        super().__init__(
             Conv2dLeakyReLU(
                 NUM_CELL_TYPES,
                 64,
@@ -288,7 +286,13 @@ class GameganAutoencoder(nn.Module):
             LinearLeakyReLU(448, 256, negative_slope=leak),
         )
 
-        self.renderer = nn.Sequential(
+
+class GameganRenderer(nn.Sequential):
+    def __init__(self):
+        use_batch_norm = True
+        leak = 0.2
+
+        super().__init__(
             LinearLeakyReLU(256, 448, negative_slope=leak),
             nn.Unflatten(dim=1, unflattened_size=(64, 7, 1)),
             ConvTranspose2dLeakyReLU(
@@ -308,6 +312,13 @@ class GameganAutoencoder(nn.Module):
             nn.ConvTranspose2d(64, NUM_CELL_TYPES, kernel_size=2, stride=2),
             nn.Softmax(dim=1),
         )
+
+
+class GameganAutoencoder(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.board_encoder = GameganBoardEncoder()
+        self.renderer = GameganRenderer()
 
     def forward(self, b):
         # Encode board state
