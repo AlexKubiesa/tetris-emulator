@@ -200,17 +200,19 @@ class GameganGenerator(nn.Module):
 
         self.board_encoder = GameganBoardEncoder()
 
-        self.event_encoder = nn.Sequential(
-            LinearLeakyReLU(
-                NUM_EVENT_TYPES + NUM_RANDOM_INPUTS, 32, negative_slope=leak
-            ),
-            LinearLeakyReLU(32, 32, negative_slope=leak),
-            LinearLeakyReLU(32, 32, negative_slope=leak),
+        self.event_embedding = LinearLeakyReLU(
+            NUM_EVENT_TYPES, 256, negative_slope=leak
+        )
+        self.random_embedding = LinearLeakyReLU(
+            NUM_RANDOM_INPUTS, 256, negative_slope=leak
+        )
+
+        self.random_event_encoder = nn.Sequential(
+            LinearLeakyReLU(512, 256, negative_slope=leak), nn.Linear(256, 256)
         )
 
         self.dynamics = nn.Sequential(
-            LinearLeakyReLU(256 + 32, 256, negative_slope=leak),
-            LinearLeakyReLU(256, 256, negative_slope=leak),
+            LinearLeakyReLU(512, 256, negative_slope=leak),
             LinearLeakyReLU(256, 256, negative_slope=leak),
         )
 
@@ -222,16 +224,18 @@ class GameganGenerator(nn.Module):
         # Encode board state
         s = self.board_encoder(b)
 
-        # Generate random inputs
+        # Embed events
+        e = self.event_embedding(e)
+
+        # Generate and embed random inputs
         z = torch.rand(batch_size, NUM_RANDOM_INPUTS, device=self.device)
+        z = self.random_embedding(z)
 
         # Encode events and random inputs
-        v = self.event_encoder(torch.cat((e, z), dim=1))
-
-        # Combine encodings
-        h = torch.cat((s, v), dim=1)
+        v = self.random_event_encoder(torch.cat((e, z), dim=1))
 
         # Apply game dynamics
+        h = torch.cat((s, v), dim=1)
         h = self.dynamics(h)
 
         # Render new board
