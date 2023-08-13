@@ -6,7 +6,7 @@ import shutil
 import numpy as np
 
 
-class FileBasedDatabaseWithEvents:
+class FileBasedDatabase:
     def __init__(self, path: str):
         if not os.path.exists(path):
             logging.info("Directory %s will be created as it does not exist.", path)
