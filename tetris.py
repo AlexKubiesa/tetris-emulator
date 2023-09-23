@@ -185,17 +185,28 @@ class TetrisApp(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
     parser.add_argument(
         "--record",
         action="store_true",
         help="If set, this flag records game data for use in model training.",
     )
+
     parser.add_argument(
         "--engine",
         default="model",
         choices=["model", "rule"],
         help="The engine drives the Tetris game. 'model' is a machine learning model-based engine."
         + " 'rule' is an explicit rule-based engine with the Tetris rules explicitly coded in.",
+    )
+
+    parser.add_argument(
+        "--engine-mode",
+        default="prob",
+        choices=["normal", "prob"],
+        help="The engine mode, only used when engine='model'. 'normal' means the cell type is the"
+        + " argmax of the model outputs. 'prob' means the cell type is drawn from a probability"
+        + " distribution according to the model outputs. ",
     )
 
     args = parser.parse_args()
@@ -209,7 +220,7 @@ if __name__ == "__main__":
     if args.engine == "rule":
         engine = RuleBasedTetrisEngine(COLS, ROWS)
     else:
-        engine = ModelBasedTetrisEngine(COLS, ROWS, mode="normal")
+        engine = ModelBasedTetrisEngine(COLS, ROWS, mode=args.engine_mode)
 
     if args.record:
         engine = RecordingTetrisEngine(

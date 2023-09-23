@@ -23,13 +23,22 @@
             "args": ["--record", "--engine", "rule"]
         },
         {
-            "name": "Model-based Tetris",
+            "name": "Model-based Tetris (normal)",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/tetris.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "args": ["--engine", "model"]
+            "args": ["--engine", "model", "--engine-mode", "normal"]
+        },
+        {
+            "name": "Model-based Tetris (prob)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/tetris.py",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "args": ["--engine", "model", "--engine-mode", "prob"]
         }
     ]
 }

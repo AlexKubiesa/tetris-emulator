@@ -38,6 +38,10 @@ You can also run the emulation in Visual Studio Code, where some launch profiles
 * `model` is a machine learning model-based predictor.
 * `rule` has the Tetris rules explicitly coded in.
 
+**`--engine-mode`**: When `--engine` is set to `model`, the mode determines how the model outputs are interpreted. Default value: `normal`.
+* `normal` takes the argmax of the outputs at each cell, so each cell is assigned its most likely value.
+* `prob` treats the model output at each cell as a probability distribution and draws the cell type from that distribution.
+
 
 ## Current capabilities
 
