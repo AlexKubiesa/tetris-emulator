@@ -21,6 +21,7 @@ from engines import (
     RecordingTetrisEngine,
     RuleBasedTetrisEngine,
     TetrisEngine,
+    ProbabilisticRecordingFilter,
 )
 
 # The configuration
@@ -221,7 +222,9 @@ if __name__ == "__main__":
         engine = ModelBasedTetrisEngine(COLS, ROWS, mode="normal")
 
     if args.record:
-        engine = RecordingTetrisEngine(engine, "recordings")
+        engine = RecordingTetrisEngine(
+            engine, "recordings", filter=ProbabilisticRecordingFilter(0.2)
+        )
 
     App = TetrisApp(engine)
     App.run()

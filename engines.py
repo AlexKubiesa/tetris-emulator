@@ -222,29 +222,39 @@ class RuleBasedTetrisEngine(TetrisEngine):
 class RecordingTetrisEngine(TetrisEngine):
     """A Tetris engine decorator that captures gameplay data."""
 
-    def __init__(self, engine: TetrisEngine, folder: str):
+    def __init__(self, engine: TetrisEngine, folder: str, filter=None):
         self.engine = engine
         self.db = recording.FileBasedDatabase(folder)
+        self.filter = filter
         self.board_1 = None
         self.board_2 = None
         self.event = None
 
-    def reset(self) -> tuple[npt.NDArray[np.int32], bool]:
+    def reset(self) -> npt.NDArray[np.int32]:
         self.board_1 = None
         self.event = None
         board = self.engine.reset()
         self.board_2 = board
         return board
 
-    def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
+    def step(self, event_type: int) -> npt.NDArray[np.int32]:
         board = self.engine.step(event_type)
         self.board_1 = self.board_2
         self.board_2 = board
         self.event = event_type
         boards = np.array([self.board_1, self.board_2])
         events = np.array([self.event])
-        self.db.insert(boards, events)
+        if (self.filter is None) or self.filter.should_store(boards, events):
+            self.db.insert(boards, events)
         return board
+
+
+class ProbabilisticRecordingFilter:
+    def __init__(self, prob):
+        self.prob = prob
+
+    def should_store(self, boards, events):
+        return random.random() < self.prob
 
 
 class ModelBasedTetrisEngine(TetrisEngine):
