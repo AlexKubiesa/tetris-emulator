@@ -125,18 +125,8 @@ class TetrisApp(object):
         if self.gameover or self.paused:
             return
 
-        # Check if top row has any cells filled before the step
-        if event == EventTypes.DROP:
-            top_row_blocked_before = (self.board[0] > 0).any()
-
         # Pass board to engine to update
-        self.board = self.engine.step(event)
-
-        # Gameover if the event is a block drop and the top row has filled cells before and after
-        if event == EventTypes.DROP:
-            top_row_blocked_after = (self.board[0] > 0).any()
-            if top_row_blocked_before and top_row_blocked_after:
-                self.gameover = True
+        self.board, self.gameover = self.engine.step(event)
 
     def toggle_pause(self):
         self.paused = not self.paused
@@ -165,7 +155,7 @@ class TetrisApp(object):
         while 1:
             self.screen.fill((0, 0, 0))
             if self.gameover:
-                self.center_msg(f"Game Over!\nPress space to continue")
+                self.center_msg("Game Over!\nPress space to continue")
             else:
                 if self.paused:
                     self.center_msg("Paused")

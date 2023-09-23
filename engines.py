@@ -44,7 +44,7 @@ class TetrisEngine(ABC):
         pass
 
     @abstractmethod
-    def step(self, event_type: int) -> npt.NDArray[np.int32]:
+    def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         """Advances one time step and returns the new state of the board.
 
         Arguments:
@@ -104,19 +104,26 @@ class RuleBasedTetrisEngine(TetrisEngine):
         self.rows = rows
         self.block = None
         self.board = None
+        self.gameover = False
 
     def reset(self) -> npt.NDArray[np.int32]:
         self.board = np.zeros((self.rows, self.cols), dtype=np.int32)
+        self.gameover = False
         return self.board
 
-    def step(self, event_type: int) -> npt.NDArray[np.int32]:
+    def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         if self.board is None:
             raise RuntimeError("`reset` must be called before `step`.")
+
+        if self.gameover:
+            raise RuntimeError("Game is over.")
 
         if event_type == EventTypes.DROP:
             if self.block is None:
                 self.board = self.clear_rows(self.board)
                 self.new_block()
+                if self.check_collision(self.board, self.block):
+                    self.gameover = True
             else:
                 self.block.y += 1
             if self.check_collision(self.board, self.block, offset=(0, 1)):
@@ -171,7 +178,7 @@ class RuleBasedTetrisEngine(TetrisEngine):
         board = self.board.copy()
         if self.block is not None:
             self.add_block_to_board(board, self.block)
-        return board
+        return board, self.gameover
 
     def new_block(self):
         shape = random.choice(TETRIS_SHAPES)
@@ -237,8 +244,8 @@ class RecordingTetrisEngine(TetrisEngine):
         self.board_2 = board
         return board
 
-    def step(self, event_type: int) -> npt.NDArray[np.int32]:
-        board = self.engine.step(event_type)
+    def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
+        board, gameover = self.engine.step(event_type)
         self.board_1 = self.board_2
         self.board_2 = board
         self.event = event_type
@@ -246,7 +253,7 @@ class RecordingTetrisEngine(TetrisEngine):
         events = np.array([self.event])
         if (self.filter is None) or self.filter.should_store(boards, events):
             self.db.insert(boards, events)
-        return board
+        return board, gameover
 
 
 class ProbabilisticRecordingFilter:
@@ -274,7 +281,7 @@ class ModelBasedTetrisEngine(TetrisEngine):
         self.board = np.zeros((self.rows, self.cols), dtype=np.int32)
         return self.board
 
-    def step(self, event_type: int) -> npt.NDArray[np.int32]:
+    def step(self, event_type: int) -> tuple[npt.NDArray[np.int32], bool]:
         if self.board is None:
             raise RuntimeError("`reset` must be called before `step`.")
 
@@ -301,4 +308,4 @@ class ModelBasedTetrisEngine(TetrisEngine):
         else:
             np.argmax(probs, axis=0, out=self.board)
 
-        return self.board
+        return self.board, False
